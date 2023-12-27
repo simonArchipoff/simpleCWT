@@ -76,7 +76,7 @@ void SimpleCWT::init(int sr, int size,int n,  const vector<float> & frequencies)
     auto in = fftw_malloc<fftwf_complex>(size);
     auto out = fftw_malloc<fftwf_complex>(size);
     fftw_init_threads();
-    fftw_plan_with_nthreads(4);
+    fftw_plan_with_nthreads(8);
     forward = fftwf_plan_dft_1d(size,in,out, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_plan_with_nthreads(1);
     backward = fftwf_plan_dft_1d(size,in,out,FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -85,7 +85,7 @@ void SimpleCWT::init(int sr, int size,int n,  const vector<float> & frequencies)
 
     this->morlets.resize(frequencies.size());
     this->frequency = frequencies;
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for
     for(int i = 0; i < frequencies.size(); i++){
         MorletFrequencyDomain m{sr,frequencies[i],n,size};
         this->morlets[i] = m;
@@ -115,7 +115,7 @@ SimpleCWT::~SimpleCWT(){
 
 void SimpleCWT::run(const fftwf_complex * input, int size_input, struct result& output){
     output.init(frequency,size_input);
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for
     for(int i = 0; i < morlets.size(); i++){
         convolve(morlets[i], input, output.res[i]);
     }

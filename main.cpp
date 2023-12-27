@@ -12,7 +12,7 @@ int f() {
     int sr = 44000;
     int size_cwt = 1024*64*2;
     int size_input = 100000;
-    int nb_frequencies = 256;
+    int nb_frequencies = 4096;
     std::cout << "Sample rate: " << sr << std::endl;
     std::cout << "Size of CWT: " << size_cwt << std::endl;
     std::cout << "Size of input: " << size_input << std::endl;
