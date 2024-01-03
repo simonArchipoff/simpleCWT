@@ -30,6 +30,7 @@ MorletFrequencyDomain::MorletFrequencyDomain(int sr, float frequency, int n, int
     this->size = size;
     morlet_fd.resize(size);
     first_idx = -1;
+    last_idx = 0;
     for(int i = 0; i < size && last_idx != i - 1; i++){
         morlet_fd[i] = value(i);
         if(value(i)>1e-6){
@@ -43,7 +44,7 @@ MorletFrequencyDomain::MorletFrequencyDomain(int sr, float frequency, int n, int
 
 void MorletFrequencyDomain::multiply(const fftwf_complex * v, fftwf_complex * out) const {
     for(int i = 0; i < size; i++){
-        if(i >= first_idx && i <= last_idx){
+        if( i >= first_idx && i <= last_idx){
             const auto s = morlet_fd[i];
             out[i][0] = v[i][0] * s;
             out[i][1] = v[i][1] * s;
@@ -76,7 +77,7 @@ void SimpleCWT::init(int sr, int size,int n,  const vector<float> & frequencies)
     auto in = fftw_malloc<fftwf_complex>(size);
     auto out = fftw_malloc<fftwf_complex>(size);
     fftw_init_threads();
-    fftw_plan_with_nthreads(8);
+    fftw_plan_with_nthreads(12);
     forward = fftwf_plan_dft_1d(size,in,out, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_plan_with_nthreads(1);
     backward = fftwf_plan_dft_1d(size,in,out,FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -115,7 +116,7 @@ SimpleCWT::~SimpleCWT(){
 
 void SimpleCWT::run(const fftwf_complex * input, int size_input, struct result& output){
     output.init(frequency,size_input);
-#pragma omp parallel for
+#pragma omp parallel for num_threads(12)
     for(int i = 0; i < morlets.size(); i++){
         convolve(morlets[i], input, output.res[i]);
     }

@@ -8,11 +8,17 @@
 
 int f() {
 
-
+#if 0
+    int sr = 1024;
+    int size_cwt = 1024*2;
+    int size_input = 1025;
+    int nb_frequencies = 8;
+#else
     int sr = 44000;
-    int size_cwt = 1024*64*2;
-    int size_input = 100000;
-    int nb_frequencies = 4096;
+    int size_cwt = 1024*1024*8;
+    int size_input = 1024*1024*8;
+    int nb_frequencies = 32*3;
+#endif
     std::cout << "Sample rate: " << sr << std::endl;
     std::cout << "Size of CWT: " << size_cwt << std::endl;
     std::cout << "Size of input: " << size_input << std::endl;
@@ -31,10 +37,10 @@ int f() {
 
     std::vector<float> s(size_input);
     s[42] = 1;
-
+    {
     SimpleCWT::result output;
     cwt.run(s.data(), s.size(), output);
-
+    }
     auto endRun = std::chrono::high_resolution_clock::now();
     auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(endRun - startRun).count();
 
@@ -42,12 +48,12 @@ int f() {
 
 
 
-    vector<std::complex<float>> out(nb_frequencies*s.size());
+    std::complex<float> * out = (std::complex<float>*) malloc(sizeof(std::complex<float>) *nb_frequencies*s.size());
 
     auto fcwt_instance_start = std::chrono::high_resolution_clock::now();
     Morlet morlet(20);
-    FCWT fcwt(&morlet,4,true,false);
-    Scales scs(&morlet, FCWT_LOGSCALES, sr, 200 , sr/2.1, nb_frequencies);
+    FCWT fcwt(&morlet,12,true,false);
+    Scales scs(&morlet, FCWT_LOGSCALES, sr, 20 , sr/2.1, nb_frequencies);
     fcwt.create_FFT_optimization_plan(size_cwt,FFTW_ESTIMATE);
     auto fcwt_instance_end = std::chrono::high_resolution_clock::now();
     auto fcwt_instance_time = std::chrono::duration_cast<std::chrono::milliseconds>(fcwt_instance_end - fcwt_instance_start).count();
@@ -56,7 +62,7 @@ int f() {
 
 
     auto fcwt_run_start = std::chrono::high_resolution_clock::now();
-    fcwt.cwt(s.data(),s.size(),out.data(),&scs);
+    fcwt.cwt(s.data(),s.size(),out,&scs);
     auto fcwt_run_end = std::chrono::high_resolution_clock::now();
     auto fcwt_run_time = std::chrono::duration_cast<std::chrono::milliseconds>(fcwt_run_end - fcwt_run_start).count();
     std::cout << "Temps d'exécution fcwt : " << fcwt_run_time << " millisecondes" << std::endl;
@@ -68,6 +74,7 @@ int f() {
 
 int main(){
     f();
+
     return 0;
 }
 
